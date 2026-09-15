@@ -12,6 +12,14 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('studentId');
+      localStorage.removeItem('studentName');
+      localStorage.removeItem('isAdmin');
+      localStorage.removeItem('userSession');
+    }
+
     async function fetchStudents() {
       try {
         const res = await fetch('/api/students', { cache: 'no-store' });
@@ -28,13 +36,15 @@ export default function HomePage() {
   const handleStudentLogin = (e) => {
     e.preventDefault();
 
-    if (!selectedStudent) {
+    if (!selectedStudent || selectedStudent === 'default') {
       setError('Pilih siswa terlebih dahulu.');
       return;
     }
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('userSession', JSON.stringify({ role: 'student', studentId: selectedStudent }));
+      localStorage.setItem('userRole', 'student');
+      localStorage.setItem('studentId', String(selectedStudent));
+      localStorage.setItem('studentName', String(selectedStudent));
     }
 
     router.push('/students');
@@ -55,19 +65,20 @@ export default function HomePage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'Login admin gagal');
+        setError('Username atau password salah!');
         setLoading(false);
         return;
       }
 
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userSession', JSON.stringify({ role: 'admin', isAdmin: true }));
+        localStorage.setItem('userRole', 'admin');
+        localStorage.setItem('isAdmin', 'true');
       }
 
       router.push('/students');
     } catch (err) {
       console.error(err);
-      setError('Terjadi kesalahan saat login admin');
+      setError('Username atau password salah!');
       setLoading(false);
     }
   };
@@ -110,7 +121,7 @@ export default function HomePage() {
                     onChange={(e) => setSelectedStudent(e.target.value)}
                     className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-white focus:border-[#3b82f6]/50 focus:outline-none focus:ring-2 focus:ring-[#3b82f6]/30"
                   >
-                    <option value="">Pilih nama siswa</option>
+                    <option value="default">Pilih nama siswa</option>
                     {students.map((student) => (
                       <option key={student.id} value={student.id}>
                         {student.full_name}

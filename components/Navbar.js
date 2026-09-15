@@ -1,7 +1,28 @@
 import Link from 'next/link';
-import { Shield, Sparkles, Home } from 'lucide-react';
+import { Shield, Sparkles, Home, LogOut } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Navbar() {
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    const adminFlag = localStorage.getItem('isAdmin');
+    setIsAuthenticated(role === 'student' || role === 'admin' || adminFlag === 'true');
+  }, [router.asPath]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('studentId');
+    localStorage.removeItem('studentName');
+    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('userSession');
+    setIsAuthenticated(false);
+    router.push('/');
+  };
+
   return (
     <nav className="fixed left-0 right-0 top-0 z-[999] pointer-events-auto px-4 py-4 sm:px-6">
       <div className="mx-auto flex max-w-6xl items-center justify-between rounded-full border border-white/10 bg-white/5 px-4 py-3 shadow-[0_0_30px_rgba(59,130,246,0.12)] backdrop-blur-xl">
@@ -24,23 +45,37 @@ export default function Navbar() {
               Home
             </span>
           </Link>
-          <Link
-            href="/students"
-            className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Sparkles size={14} />
-              Security Lab
-            </span>
-          </Link>
+
+          {isAuthenticated && (
+            <Link
+              href="/students"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white/80 transition hover:bg-white/10 hover:text-white"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Sparkles size={14} />
+                Security Lab
+              </span>
+            </Link>
+          )}
         </div>
 
-        <Link
-          href="/students"
-          className="rounded-full border border-[#3b82f6]/40 bg-[#3b82f6]/10 px-4 py-2 text-sm font-semibold text-[#dbeafe] shadow-[0_0_18px_rgba(59,130,246,0.25)] transition hover:bg-[#3b82f6]/20"
-        >
-          Explore Lab
-        </Link>
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-100 transition hover:bg-red-500/20"
+          >
+            <LogOut size={14} />
+            Logout
+          </button>
+        ) : (
+          <Link
+            href="/"
+            className="rounded-full border border-[#3b82f6]/40 bg-[#3b82f6]/10 px-4 py-2 text-sm font-semibold text-[#dbeafe] shadow-[0_0_18px_rgba(59,130,246,0.25)] transition hover:bg-[#3b82f6]/20"
+          >
+            Explore Lab
+          </Link>
+        )}
       </div>
     </nav>
   );

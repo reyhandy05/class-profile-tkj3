@@ -3,13 +3,25 @@ import { ArrowRight, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Tilt from 'react-parallax-tilt';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 export default function StudentListPage() {
+  const router = useRouter();
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('userRole');
+      if (role !== 'student' && role !== 'admin') {
+        router.replace('/');
+        return;
+      }
+      setAuthReady(true);
+    }
+
     const fetchStudents = async () => {
       const query = typeof search === 'string' ? search.trim() : '';
       setLoading(true);
@@ -39,7 +51,11 @@ export default function StudentListPage() {
     };
 
     fetchStudents();
-  }, [search]);
+  }, [search, router]);
+
+  if (!authReady) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-gray-950 px-4 pb-16 pt-28 text-white sm:px-6">

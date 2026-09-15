@@ -12,6 +12,7 @@ export default function StudentProfilePage() {
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   const fetchStudent = async () => {
     if (!id) return;
@@ -48,27 +49,25 @@ export default function StudentProfilePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('userSession');
-      if (!raw) {
-        setIsAdmin(false);
+      const role = localStorage.getItem('userRole');
+      const adminFlag = localStorage.getItem('isAdmin');
+
+      if (role !== 'student' && role !== 'admin' && adminFlag !== 'true') {
+        router.replace('/');
         return;
       }
 
-      try {
-        const session = JSON.parse(raw);
-        setIsAdmin(session && session.role === 'admin');
-      } catch (error) {
-        setIsAdmin(false);
-      }
+      setIsAdmin(role === 'admin' || adminFlag === 'true');
+      setAuthReady(true);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!authReady || !id) return;
 
     fetchStudent();
     fetchComments();
-  }, [id]);
+  }, [authReady, id]);
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
@@ -133,7 +132,7 @@ export default function StudentProfilePage() {
     }
   };
 
-  if (!student) {
+  if (!authReady || !student) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-950 px-6 text-white">
         <div className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-slate-300 backdrop-blur-xl">
