@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, MessageSquareQuote, UserRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function StudentProfilePage() {
   const router = useRouter();
   const { id } = router.query;
+  const fileInputRef = useRef(null);
   const [student, setStudent] = useState(null);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
@@ -111,7 +112,7 @@ export default function StudentProfilePage() {
 
   const handlePhotoUpload = async (event) => {
     const file = event.target.files && event.target.files[0];
-    if (!file || !id) return;
+    if (!file || !id || !isAdmin) return;
 
     try {
       const formData = new FormData();
@@ -178,12 +179,25 @@ export default function StudentProfilePage() {
                 className="relative h-[320px] w-full rounded-[28px] border border-white/10 object-cover shadow-[0_15px_40px_rgba(59,130,246,0.2)]"
               />
 
-              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
-                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#3b82f6]/40 bg-[#3b82f6]/10 px-4 py-3 text-sm font-medium text-[#dbeafe] transition hover:bg-[#3b82f6]/20">
-                  <span>Upload Photo</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                </label>
-              </div>
+              {isAdmin && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#3b82f6]/40 bg-[#3b82f6]/10 px-4 py-3 text-sm font-medium text-[#dbeafe] transition hover:bg-[#3b82f6]/20"
+                  >
+                    Upload Photo
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col justify-center">
