@@ -2,9 +2,28 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { motion } from 'framer-motion';
 
-export default function HomePage() {
+export async function getServerSideProps() {
+  try {
+    const { pool } = require('../lib/db');
+    const [rows] = await pool.query('SELECT id, full_name AS name FROM students ORDER BY full_name ASC');
+
+    return {
+      props: {
+        students: JSON.parse(JSON.stringify(rows)),
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching students:', error);
+    return {
+      props: {
+        students: [],
+      },
+    };
+  }
+}
+
+export default function HomePage({ students = [] }) {
   const router = useRouter();
-  const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
@@ -19,18 +38,6 @@ export default function HomePage() {
       localStorage.removeItem('isAdmin');
       localStorage.removeItem('userSession');
     }
-
-    async function fetchStudents() {
-      try {
-        const res = await fetch('/api/students', { cache: 'no-store' });
-        const data = await res.json();
-        setStudents(data.students || []);
-      } catch (err) {
-        console.error('Failed to fetch students', err);
-      }
-    }
-
-    fetchStudents();
   }, []);
 
   const handleStudentLogin = (e) => {
@@ -41,10 +48,12 @@ export default function HomePage() {
       return;
     }
 
+    const selectedName = students.find((student) => String(student.id) === String(selectedStudent))?.name || '';
+
     if (typeof window !== 'undefined') {
       localStorage.setItem('userRole', 'student');
       localStorage.setItem('studentId', String(selectedStudent));
-      localStorage.setItem('studentName', String(selectedStudent));
+      localStorage.setItem('studentName', selectedName);
     }
 
     router.push('/students');
@@ -124,7 +133,7 @@ export default function HomePage() {
                     <option value="default">Pilih nama siswa</option>
                     {students.map((student) => (
                       <option key={student.id} value={student.id}>
-                        {student.full_name}
+                        {student.name}
                       </option>
                     ))}
                   </select>
