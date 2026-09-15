@@ -68,8 +68,32 @@ async function createSchema(connection) {
       hobbies VARCHAR(255) DEFAULT NULL,
       future_goals VARCHAR(255) DEFAULT NULL,
       description TEXT,
-      profile_picture_path VARCHAR(255) DEFAULT '/images/default.jpg'
+      profile_picture_path VARCHAR(255) DEFAULT '/images/default.jpg',
+      photo_url VARCHAR(255) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(100) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  await connection.execute(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      student_id VARCHAR(50) NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  await connection.execute(`
+    ALTER TABLE students
+    ADD COLUMN IF NOT EXISTS photo_url VARCHAR(255) DEFAULT NULL;
   `);
 }
 
@@ -85,10 +109,12 @@ async function seedData() {
   try {
     await createSchema(connection);
     await connection.execute('DELETE FROM students');
+    await connection.execute('DELETE FROM users');
+    await connection.execute('DELETE FROM comments');
 
     for (const student of students) {
       await connection.execute(
-        `INSERT INTO students (full_name, nickname, class_name, expertise, skills, hobbies, future_goals, description, profile_picture_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        `INSERT INTO students (full_name, nickname, class_name, expertise, skills, hobbies, future_goals, description, profile_picture_path, photo_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
         [
           student.full_name,
           student.nickname,
@@ -99,11 +125,24 @@ async function seedData() {
           student.future_goals,
           student.description,
           student.profile_picture_path,
+          null,
         ]
       );
     }
 
-    console.log('Seeded 32 students into the database successfully.');
+    const admins = [
+      { username: 'reyhandy', password: 'syncup' },
+      { username: 'rifqi', password: 'rifqi123' },
+    ];
+
+    for (const admin of admins) {
+      await connection.execute(
+        'INSERT INTO users (username, password) VALUES (?, ?)',
+        [admin.username, admin.password]
+      );
+    }
+
+    console.log('Seeded 32 students and admin users into the database successfully.');
   } catch (error) {
     console.error('Seeding error:', error.message);
     process.exitCode = 1;

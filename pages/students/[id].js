@@ -10,6 +10,20 @@ export default function StudentProfilePage() {
   const [student, setStudent] = useState(null);
   const [comment, setComment] = useState('');
   const [comments, setComments] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const fetchStudent = async () => {
+    if (!id) return;
+
+    try {
+      const response = await fetch(`/api/students/${id}`);
+      const data = await response.json();
+      setStudent(data.student || null);
+    } catch (error) {
+      console.error(error);
+      setStudent(null);
+    }
+  };
 
   const fetchComments = async () => {
     if (!id) return;
@@ -32,18 +46,13 @@ export default function StudentProfilePage() {
   };
 
   useEffect(() => {
-    if (!id) return;
-
-    async function fetchStudent() {
-      try {
-        const response = await fetch(`/api/students/${id}`);
-        const data = await response.json();
-        setStudent(data.student || null);
-      } catch (error) {
-        console.error(error);
-        setStudent(null);
-      }
+    if (typeof window !== 'undefined') {
+      setIsAdmin(localStorage.getItem('isAdmin') === 'true');
     }
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
 
     fetchStudent();
     fetchComments();
@@ -69,6 +78,44 @@ export default function StudentProfilePage() {
       }
       setComment('');
       await fetchComments();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleCommentDelete = async (commentId) => {
+    if (!commentId || !id) return;
+
+    try {
+      const response = await fetch(`/api/students/${id}/comments/${commentId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      setComments(data.comments || []);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handlePhotoUpload = async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file || !id) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`/api/upload?id=${id}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data && data.url) {
+        setStudent((prev) => ({ ...prev, photo_url: data.url }));
+        await fetchStudent();
+      }
     } catch (error) {
       console.error(error);
     }
@@ -115,10 +162,17 @@ export default function StudentProfilePage() {
             <div className="relative">
               <div className="absolute inset-0 rounded-[28px] bg-[radial-gradient(circle,_rgba(59,130,246,0.38),transparent_60%)] blur-2xl" />
               <img
-                src={student.profile_picture_path || '/images/default.svg'}
+                src={student.photo_url || student.profile_picture_path || '/images/default.svg'}
                 alt={student.full_name}
                 className="relative h-[320px] w-full rounded-[28px] border border-white/10 object-cover shadow-[0_15px_40px_rgba(59,130,246,0.2)]"
               />
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+                <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#3b82f6]/40 bg-[#3b82f6]/10 px-4 py-3 text-sm font-medium text-[#dbeafe] transition hover:bg-[#3b82f6]/20">
+                  <span>Upload Photo</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                </label>
+              </div>
             </div>
 
             <div className="flex flex-col justify-center">
@@ -186,7 +240,18 @@ export default function StudentProfilePage() {
             ) : (
               comments.map((item) => (
                 <div key={item.id} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-slate-200">
-                  <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                  <div className="flex items-start justify-between gap-3">
+                    <div dangerouslySetInnerHTML={{ __html: item.content }} />
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => handleCommentDelete(item.id)}
+                        className="rounded-full border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-200 transition hover:bg-red-500/20"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))
             )}
