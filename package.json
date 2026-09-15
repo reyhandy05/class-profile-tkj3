@@ -1,0 +1,25 @@
+{
+  "name": "xi-tkj-3-web-security-lab",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "framer-motion": "^13.3.0",
+    "lucide-react": "^1.46.0",
+    "mysql2": "^3.11.3",
+    "next": "^16.3.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-parallax-tilt": "^1.7.342"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16"
+  }
+}
