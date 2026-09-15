@@ -47,7 +47,18 @@ export default function StudentProfilePage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsAdmin(localStorage.getItem('isAdmin') === 'true');
+      const raw = localStorage.getItem('userSession');
+      if (!raw) {
+        setIsAdmin(false);
+        return;
+      }
+
+      try {
+        const session = JSON.parse(raw);
+        setIsAdmin(session && session.role === 'admin');
+      } catch (error) {
+        setIsAdmin(false);
+      }
     }
   }, []);
 
